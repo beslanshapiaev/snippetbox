@@ -8,22 +8,20 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type application struct {
+	logger *slog.Logger
+}
+
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP network address")
 	flag.Parse()
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	app := &application{
+		logger: logger,
+	}
 
-	mux := http.NewServeMux()
-
-	fileServer := http.FileServer(http.Dir("./ui/static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet/view", snippetView)
-	mux.HandleFunc("/snippet/create", snippetCreate)
-	// log.Printf("starting server on %s", *addr)
 	logger.Info("starting server", "addr", *addr)
-	err := http.ListenAndServe(*addr, mux)
+	err := http.ListenAndServe(*addr, app.routes())
 	logger.Error(err.Error())
 	os.Exit(1)
 	// log.Fatal(err)
