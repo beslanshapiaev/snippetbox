@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"text/template"
 
 	"snippetbox.beslan.net/internal/models"
 )
@@ -21,29 +22,29 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, snippet := range snippets {
-		fmt.Fprintf(w, "%+v\n", snippet)
+	files := []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/pages/home.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
 	}
 
-	// files := []string{
-	// 	"./ui/html/base.tmpl.html",
-	// 	"./ui/html/pages/home.tmpl.html",
-	// 	"./ui/html/partials/nav.tmpl.html",
-	// }
+	ts, err := template.ParseFiles(files...)
 
-	// ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
 
-	// if err != nil {
-	// 	app.serverError(w, r, err)
-	// 	return
-	// }
-	// /////
-	// err = ts.ExecuteTemplate(w, "base", nil)
-	// if err != nil {
-	// 	app.serverError(w, r, err)
-	// }
+	data := templateData{
+		Snippets: snippets,
+	}
 
-	// w.Write([]byte("Hello from Snippetbox"))
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+
+	w.Write([]byte("Hello from Snippetbox"))
 }
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
@@ -60,6 +61,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 			app.serverError(w, r, err)
 		}
 		return
+	}
+
+	files := []string{
+		"./ui/html/base.tmpl.html",
+		"./ui/html/partials/nav.tmpl.html",
+		"./ui/html/pages/view.tmpl.html",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	data := templateData{
+		Snippet: snippet,
+	}
+
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
 	}
 
 	fmt.Fprintf(w, "%+v", snippet)
